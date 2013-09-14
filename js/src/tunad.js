@@ -13,15 +13,15 @@ Tunad.Action = function(func)
 Tunad.Action.prototype.play = function(env, arg)
 {
 	this.func.call(env, arg);
-}
+};
 Tunad.Action.prototype.complete = function(value)
 {
 	if(this.onComplete)
 	{
 		this.onComplete(value);
-		this.onComplete = null;
+		this.onComplete = undefined;
 	}
-}
+};
 Tunad.Action.prototype.apply = function(arg)
 {
 	var action = this;
@@ -34,6 +34,10 @@ Tunad.Action.prototype.apply = function(arg)
 		action.play(this, arg);
 	});
 	return wrapper;
+};
+Tunad.Action.prototype.$ = function(arg)
+{
+	return this.apply(arg);
 };
 
 Tunad._void = function()
@@ -89,7 +93,7 @@ Tunad.mbind = function()
 	}
 };
 
-Tunad.async = function()
+Tunad.all = function()
 {
 	if(arguments.length > 0)
 	{
@@ -119,7 +123,39 @@ Tunad.async = function()
 	}
 };
 
-Tunad.assign = function(name)
+Tunad.some = function()
+{
+	if(arguments.length > 0)
+	{
+		var actions = arguments;
+		var action = new Action(function(arg)
+		{
+			function handler(value)
+			{
+				for(var i = 0; i < actions.length; i++)
+				{
+					if(actions[i] !== this)
+					{
+						actions[i].onComplete = undefined;
+					}
+				}
+				action.complete(value);
+			}
+			for(var i = 0; i < actions.length; i++)
+			{
+				actions[i].onComplete = handler;
+				actions[i].play(this, arg);
+			}
+		});
+		return action;
+	}
+	else
+	{
+		return _void();
+	}
+};
+
+Tunad._set = function(name)
 {
 	var action = new Action(function(arg)
 	{
@@ -130,14 +166,6 @@ Tunad.assign = function(name)
 	return action;
 };
 
-Tunad._set = function(name)
-{
-	return function(value)
-	{
-		return bind(value, assign(name));
-	};
-};
-
 Tunad._get = function(name)
 {
 	var action = new Action(function(_)
@@ -145,6 +173,14 @@ Tunad._get = function(name)
 		action.complete(this[name]);
 	});
 	return action;
+};
+
+Tunad._let = function(name)
+{
+	return function(value)
+	{
+		return bind(value, _set(name));
+	};
 };
 
 Tunad.lambda = function(func)
@@ -172,7 +208,7 @@ Tunad._do = function(func)
 
 Tunad._if = function(condition, a, b)
 {
-	var action = new Action(function(arg)
+	var action = new Action(function(_)
 	{
 		var env = this;
 		condition.onComplete = function(cond)
@@ -204,7 +240,7 @@ Tunad._while = function(condition, statement)
 	var action = new Action(function(_)
 	{
 		var env = this;
-		var v;
+		var lastValue;
 		function evalCondition()
 		{
 			condition.onComplete = function(cond)
@@ -215,7 +251,7 @@ Tunad._while = function(condition, statement)
 				}
 				else
 				{
-					action.complete(v);
+					action.complete(lastValue);
 				}
 			};
 			condition.play(env);
@@ -224,7 +260,7 @@ Tunad._while = function(condition, statement)
 		{
 			statement.onComplete = function(value)
 			{
-				v = value;
+				lastValue = value;
 				evalCondition();
 			}
 			statement.play(env);
@@ -252,10 +288,11 @@ function useTunad()
 	this._return = Tunad._return;
 	this.bind = Tunad.bind;
 	this.mbind = Tunad.mbind;
-	this.async = Tunad.async;
-	this.assign = Tunad.assign;
+	this.all = Tunad.all;
+	this.some = Tunad.some;
 	this._set = Tunad._set;
 	this._get = Tunad._get;
+	this._let = Tunad._let;
 	this.lambda = Tunad.lambda;
 	this._do = Tunad._do;
 	this._if = Tunad._if;

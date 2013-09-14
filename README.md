@@ -3,28 +3,28 @@ Tunad
 
 #Hello World
 
-	print().apply("Hello, World!").play({});
+	print().$("Hello, World!").play({});
 
 or
 
 	bind(
-		_return().apply("Hello, World!"),
+		_return().$("Hello, World!"),
 		print()
 	).play({});
 
 or
 
 	bind(
-		_return().apply("Hello, World!"),
+		_return().$("Hello, World!"),
 		lambda(function(arg){
-			return print().apply(arg);
+			return print().$(arg);
 		})
 	).play({});
 
 or
 
 	mbind(
-		assign("text").apply("Hello, World!"),
+		_set("text").$("Hello, World!"),
 		_get("text"),
 		print()
 	).play({});
@@ -32,7 +32,7 @@ or
 or
 	
 	mbind(
-		_set("text")(_return().apply("Hello, World!")),
+		_let("text")(_return().$("Hello, World!")),
 		_get("text"),
 		print()
 	).play({});
@@ -46,7 +46,7 @@ or
 or
 
 	mbind(
-		_set("text")(_return().apply("Hello, World!")),
+		_let("text")(_return().$("Hello, World!")),
 		_do(function(_)
 		{
 			console.log(this.text);
@@ -56,7 +56,7 @@ or
 or
 
 	mbind(
-		_return().apply("Hello"),
+		_return().$("Hello"),
 		_do(function(arg){
 			return arg + ", World!";
 		}),
